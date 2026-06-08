@@ -230,6 +230,27 @@
             padding: 16px 24px;
             border-bottom: 1px solid #2a2a2a;
         }
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            color: #ff6b35;
+            font-size: 24px;
+            cursor: pointer;
+            display: none;
+            transition: color 0.2s;
+        }
+        .back-btn:hover {
+            color: #ff5722;
+        }
+        .back-btn.show {
+            display: flex;
+            align-items: center;
+        }
         .chat-title {
             font-size: 18px;
             font-weight: 600;
@@ -578,7 +599,7 @@
                 <input type="text" placeholder="Tìm kiếm trò chuyện" id="searchInput">
             </div>
 
-            <div class="conversation-list">
+            <div class="conversation-list" id="conversationList">
                 <div class="date-section">April</div>
                 <div class="conversation-item" onclick="selectConversation(this, 'Andrew')">
                     <div class="conversation-avatar">A</div>
@@ -621,7 +642,12 @@
             <!-- Chat View -->
             <div id="chatView" class="content-view active">
                 <div class="chat-header">
-                    <div class="chat-title" id="chatTitle">Mang xã hội (Thử nghiệm)</div>
+                    <div class="chat-header-left">
+                        <button class="back-btn" onclick="backToHome()" title="Quay lại">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div class="chat-title" id="chatTitle">Mang xã hội (Thử nghiệm)</div>
+                    </div>
                 </div>
 
                 <div class="chat-messages" id="chatMessages">
@@ -777,6 +803,8 @@
             { name: 'Astra', desc: 'Scientist', category: 'Tech' }
         ];
 
+        let isFromHome = false;
+
         const textarea = document.getElementById('messageInput');
         
         textarea.addEventListener('input', function() {
@@ -827,6 +855,13 @@
         function selectConversation(item, name) {
             document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
+            updateChatWithCharacter(name);
+            showChatView();
+            isFromHome = false;
+            updateBackButton();
+        }
+
+        function updateChatWithCharacter(name) {
             document.getElementById('chatTitle').textContent = name;
             document.getElementById('chatMessages').innerHTML = `
                 <div class="message">
@@ -836,7 +871,7 @@
                             <span class="message-name">${name}</span>
                             <span class="message-badge">🏠 Riêng tư</span>
                         </div>
-                        <div class="message-text">Xin chào! Bạn khỏe không?</div>
+                        <div class="message-text">Xin chào! Mình là ${name}. Bạn khỏe không?</div>
                         <div class="message-reactions">
                             <button class="reaction-btn" onclick="addReaction(this)">👋</button>
                         </div>
@@ -844,7 +879,6 @@
                     </div>
                 </div>
             `;
-            showChatView();
         }
 
         function navClick(item, type) {
@@ -869,8 +903,67 @@
         }
 
         function startChat(characterName) {
-            selectConversation(document.querySelector('.conversation-item'), characterName);
+            updateChatWithCharacter(characterName);
             showChatView();
+            isFromHome = true;
+            updateBackButton();
+            addConversationToSidebar(characterName);
+        }
+
+        function updateBackButton() {
+            const backBtn = document.querySelector('.back-btn');
+            if (isFromHome) {
+                backBtn.classList.add('show');
+            } else {
+                backBtn.classList.remove('show');
+            }
+        }
+
+        function backToHome() {
+            showHomeView();
+            isFromHome = false;
+            updateBackButton();
+        }
+
+        function addConversationToSidebar(characterName) {
+            const conversationList = document.getElementById('conversationList');
+            
+            // Kiểm tra xem nhân vật đã tồn tại trong sidebar chưa
+            let existingItem = null;
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                if (item.querySelector('.conversation-name').textContent === characterName) {
+                    existingItem = item;
+                }
+            });
+
+            if (!existingItem) {
+                // Tạo mục mới trong sidebar
+                const dateSection = document.createElement('div');
+                dateSection.className = 'date-section';
+                dateSection.textContent = 'Today';
+
+                const newConversation = document.createElement('div');
+                newConversation.className = 'conversation-item active';
+                newConversation.innerHTML = `
+                    <div class="conversation-avatar">${characterName.charAt(0)}</div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">${characterName}</div>
+                        <div class="conversation-preview">Xin chào! Mình là ${characterName}...</div>
+                    </div>
+                `;
+                newConversation.onclick = function() {
+                    selectConversation(this, characterName);
+                };
+
+                conversationList.insertBefore(newConversation, conversationList.firstChild);
+                if (conversationList.querySelector('.date-section') !== dateSection) {
+                    conversationList.insertBefore(dateSection, conversationList.firstChild);
+                }
+            } else {
+                // Cập nhật active state
+                document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+                existingItem.classList.add('active');
+            }
         }
 
         function searchCharacters() {

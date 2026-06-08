@@ -255,6 +255,32 @@
             font-size: 18px;
             font-weight: 600;
         }
+        .provider-select {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .provider-select:hover {
+            border-color: #ff6b35;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ff6b35;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
         .chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -317,6 +343,7 @@
             font-size: 14px;
             line-height: 1.5;
             color: #e0e0e0;
+            word-wrap: break-word;
         }
         .message-reactions {
             display: flex;
@@ -399,6 +426,10 @@
         }
         .send-btn:active {
             transform: scale(0.95);
+        }
+        .send-btn:disabled {
+            background: #888;
+            cursor: not-allowed;
         }
         
         /* Home View Styles */
@@ -648,6 +679,12 @@
                         </button>
                         <div class="chat-title" id="chatTitle">Mang xã hội (Thử nghiệm)</div>
                     </div>
+                    <select id="providerSelect" class="provider-select">
+                        <option value="openai">OpenAI</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="anthropic">Claude</option>
+                        <option value="mock">Mock</option>
+                    </select>
                 </div>
 
                 <div class="chat-messages" id="chatMessages">
@@ -665,42 +702,12 @@
                             <div class="message-info">Bình luận (3) [Tất cả]</div>
                         </div>
                     </div>
-
-                    <div class="message">
-                        <div class="message-avatar">S</div>
-                        <div class="message-content">
-                            <div class="message-header">
-                                <span class="message-name">Syla</span>
-                                <span class="message-badge">⚠️ Bị hạn chế</span>
-                            </div>
-                            <div class="message-text">Hức... hức...cứu em với!</div>
-                            <div class="message-reactions">
-                                <button class="reaction-btn" onclick="addReaction(this)">😅</button>
-                            </div>
-                            <div class="message-info">Bình luận (3) [Tất cả]</div>
-                        </div>
-                    </div>
-
-                    <div class="message">
-                        <div class="message-avatar">S</div>
-                        <div class="message-content">
-                            <div class="message-header">
-                                <span class="message-name">Syla</span>
-                                <span class="message-badge">🌍 Toàn cầu</span>
-                            </div>
-                            <div class="message-text">Chỉ giữi @luna2 | TIGER @Viktor Volkov @Andrew</div>
-                            <div class="message-reactions">
-                                <button class="reaction-btn" onclick="addReaction(this)">😂</button>
-                            </div>
-                            <div class="message-info">Bình luận (3) [Tất cả]</div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="chat-input-area">
                     <div class="chat-input">
                         <textarea class="input-field" placeholder="Viết bình đăng..." id="messageInput"></textarea>
-                        <button class="send-btn" onclick="sendMessage()" title="Gửi tin nhắn"><i class="fas fa-paper-plane"></i></button>
+                        <button class="send-btn" onclick="sendMessage()" title="Gửi tin nhắn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
             </div>
@@ -804,41 +811,71 @@
         ];
 
         let isFromHome = false;
+        let isLoading = false;
 
         const textarea = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
         
         textarea.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
 
-        function sendMessage() {
-            if (textarea.value.trim()) {
-                const message = textarea.value;
-                const chatMessages = document.getElementById('chatMessages');
-                
-                const newMessage = document.createElement('div');
-                newMessage.className = 'message';
-                newMessage.innerHTML = `
-                    <div class="message-avatar">Y</div>
-                    <div class="message-content">
-                        <div class="message-header">
-                            <span class="message-name">Bạn</span>
-                            <span class="message-badge">🏠 Riêng tư</span>
-                        </div>
-                        <div class="message-text">${message}</div>
-                        <div class="message-reactions">
-                            <button class="reaction-btn" onclick="addReaction(this)">😊</button>
-                        </div>
-                        <div class="message-info">Vừa xong</div>
-                    </div>
-                `;
-                
-                chatMessages.appendChild(newMessage);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                textarea.value = '';
-                textarea.style.height = 'auto';
+        async function sendMessage() {
+            const txt = textarea.value.trim();
+            if (!txt || isLoading) return;
+
+            const character = document.getElementById('chatTitle').textContent;
+            const provider = document.getElementById('providerSelect').value;
+
+            // Hiển thị tin nhắn người dùng
+            appendMessageToUI('Bạn', txt, 'Y');
+            textarea.value = '';
+            textarea.style.height = 'auto';
+
+            isLoading = true;
+            sendBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, character, message: txt })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    appendMessageToUI('System', `Lỗi: ${err.error}`, 'S');
+                    return;
+                }
+
+                const data = await response.json();
+                appendMessageToUI(character, data.reply || '(Không có phản hồi)', character.charAt(0));
+            } catch (error) {
+                appendMessageToUI('System', `Lỗi: Không thể kết nối server - ${error.message}`, 'S');
+            } finally {
+                isLoading = false;
+                sendBtn.disabled = false;
             }
+        }
+
+        function appendMessageToUI(name, text, avatarLetter) {
+            const chatMessages = document.getElementById('chatMessages');
+            const newMessage = document.createElement('div');
+            newMessage.className = 'message';
+            newMessage.innerHTML = `
+                <div class="message-avatar">${escapeHtml(avatarLetter)}</div>
+                <div class="message-content">
+                    <div class="message-header"><span class="message-name">${escapeHtml(name)}</span></div>
+                    <div class="message-text">${escapeHtml(text)}</div>
+                </div>
+            `;
+            chatMessages.appendChild(newMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function escapeHtml(str) {
+            return (str + '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
         function addReaction(btn) {
@@ -928,7 +965,6 @@
         function addConversationToSidebar(characterName) {
             const conversationList = document.getElementById('conversationList');
             
-            // Kiểm tra xem nhân vật đã tồn tại trong sidebar chưa
             let existingItem = null;
             document.querySelectorAll('.conversation-item').forEach(item => {
                 if (item.querySelector('.conversation-name').textContent === characterName) {
@@ -937,7 +973,6 @@
             });
 
             if (!existingItem) {
-                // Tạo mục mới trong sidebar
                 const dateSection = document.createElement('div');
                 dateSection.className = 'date-section';
                 dateSection.textContent = 'Today';
@@ -960,7 +995,6 @@
                     conversationList.insertBefore(dateSection, conversationList.firstChild);
                 }
             } else {
-                // Cập nhật active state
                 document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
                 existingItem.classList.add('active');
             }
@@ -989,7 +1023,6 @@
             `).join('');
         }
 
-        // Enter để gửi tin nhắn (Shift+Enter để xuống dòng)
         textarea.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();

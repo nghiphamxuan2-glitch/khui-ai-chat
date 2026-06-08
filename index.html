@@ -66,6 +66,10 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
+        }
+        .coins:hover {
+            background: #3a3a3a;
         }
         .notification-icon, .profile-icon {
             width: 36px;
@@ -77,6 +81,10 @@
             justify-content: center;
             cursor: pointer;
             position: relative;
+            transition: background 0.2s;
+        }
+        .notification-icon:hover, .profile-icon:hover {
+            background: #3a3a3a;
         }
         .notification-badge {
             position: absolute;
@@ -104,6 +112,10 @@
             color: #888;
             position: relative;
             font-weight: 500;
+            transition: color 0.2s;
+        }
+        .tab:hover {
+            color: #aaa;
         }
         .tab.active {
             color: white;
@@ -126,6 +138,10 @@
             align-items: center;
             gap: 10px;
             margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+        .search-box:focus-within {
+            border-color: #ff6b35;
         }
         .search-box input {
             background: none;
@@ -160,6 +176,9 @@
             transition: background 0.2s;
         }
         .conversation-item:hover {
+            background: #1a1a1a;
+        }
+        .conversation-item.active {
             background: #1a1a1a;
         }
         .conversation-avatar {
@@ -292,11 +311,16 @@
         .reaction-btn:hover {
             background: #1a1a1a;
             color: white;
+            border-color: #ff6b35;
         }
         .message-info {
             font-size: 12px;
             color: #666;
             margin-top: 4px;
+            cursor: pointer;
+        }
+        .message-info:hover {
+            color: #888;
         }
         .chat-input-area {
             padding: 16px 24px;
@@ -318,6 +342,7 @@
             resize: none;
             max-height: 120px;
             font-family: inherit;
+            transition: border-color 0.2s;
         }
         .input-field::placeholder {
             color: #666;
@@ -343,6 +368,9 @@
         .send-btn:hover {
             background: #ff5722;
         }
+        .send-btn:active {
+            transform: scale(0.95);
+        }
         .bottom-nav {
             display: none;
             position: fixed;
@@ -364,6 +392,10 @@
             font-size: 20px;
             cursor: pointer;
             flex: 1;
+            transition: color 0.2s;
+        }
+        .nav-item:active {
+            color: #ff6b35;
         }
         .nav-item.active {
             color: #ff6b35;
@@ -407,30 +439,30 @@
                     <span>KHUI AI</span>
                 </div>
                 <div class="header-icons">
-                    <div class="coins">💰 3,220</div>
-                    <div class="notification-icon">
+                    <div class="coins" title="Click để xem điểm">💰 3,220</div>
+                    <div class="notification-icon" title="Thông báo">
                         <i class="fas fa-bell"></i>
                         <div class="notification-badge">1</div>
                     </div>
-                    <div class="profile-icon">
+                    <div class="profile-icon" title="Hồ sơ">
                         <i class="fas fa-user"></i>
                     </div>
                 </div>
             </div>
 
             <div class="tabs">
-                <div class="tab active">Trò chuyện</div>
-                <div class="tab">Vũ trụ (Beta)</div>
+                <div class="tab active" onclick="switchTab(this)">Trò chuyện</div>
+                <div class="tab" onclick="switchTab(this)">Vũ trụ (Beta)</div>
             </div>
 
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Tìm kiếm trò chuyện">
+                <input type="text" placeholder="Tìm kiếm trò chuyện" id="searchInput">
             </div>
 
             <div class="conversation-list">
                 <div class="date-section">April</div>
-                <div class="conversation-item">
+                <div class="conversation-item" onclick="selectConversation(this, 'Andrew')">
                     <div class="conversation-avatar">A</div>
                     <div class="conversation-info">
                         <div class="conversation-name">Andrew</div>
@@ -439,7 +471,7 @@
                 </div>
 
                 <div class="date-section">March</div>
-                <div class="conversation-item">
+                <div class="conversation-item" onclick="selectConversation(this, 'Andrew')">
                     <div class="conversation-avatar">A</div>
                     <div class="conversation-info">
                         <div class="conversation-name">Andrew</div>
@@ -447,7 +479,7 @@
                     </div>
                 </div>
 
-                <div class="conversation-item">
+                <div class="conversation-item" onclick="selectConversation(this, 'Viktor Volkov')">
                     <div class="conversation-avatar">V</div>
                     <div class="conversation-info">
                         <div class="conversation-name">Viktor Volkov</div>
@@ -456,7 +488,7 @@
                 </div>
 
                 <div class="date-section">February</div>
-                <div class="conversation-item">
+                <div class="conversation-item active" onclick="selectConversation(this, 'Syla')">
                     <div class="conversation-avatar">S</div>
                     <div class="conversation-info">
                         <div class="conversation-name">Syla</div>
@@ -469,10 +501,10 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="chat-header">
-                <div class="chat-title">Mang xã hội (Thử nghiệm)</div>
+                <div class="chat-title" id="chatTitle">Mang xã hội (Thử nghiệm)</div>
             </div>
 
-            <div class="chat-messages">
+            <div class="chat-messages" id="chatMessages">
                 <div class="message">
                     <div class="message-avatar">S</div>
                     <div class="message-content">
@@ -482,7 +514,7 @@
                         </div>
                         <div class="message-text">Chia tay đi!</div>
                         <div class="message-reactions">
-                            <button class="reaction-btn">😊</button>
+                            <button class="reaction-btn" onclick="addReaction(this)">😊</button>
                         </div>
                         <div class="message-info">Bình luận (3) [Tất cả]</div>
                     </div>
@@ -497,7 +529,7 @@
                         </div>
                         <div class="message-text">Hức... hức...cứu em với!</div>
                         <div class="message-reactions">
-                            <button class="reaction-btn">😅</button>
+                            <button class="reaction-btn" onclick="addReaction(this)">😅</button>
                         </div>
                         <div class="message-info">Bình luận (3) [Tất cả]</div>
                     </div>
@@ -512,7 +544,7 @@
                         </div>
                         <div class="message-text">Chỉ giữi @luna2 | TIGER @Viktor Volkov @Andrew</div>
                         <div class="message-reactions">
-                            <button class="reaction-btn">😂</button>
+                            <button class="reaction-btn" onclick="addReaction(this)">😂</button>
                         </div>
                         <div class="message-info">Bình luận (3) [Tất cả]</div>
                     </div>
@@ -521,8 +553,8 @@
 
             <div class="chat-input-area">
                 <div class="chat-input">
-                    <textarea class="input-field" placeholder="Viết bình đăng..."></textarea>
-                    <button class="send-btn"><i class="fas fa-paper-plane"></i></button>
+                    <textarea class="input-field" placeholder="Viết bình đăng..." id="messageInput"></textarea>
+                    <button class="send-btn" onclick="sendMessage()" title="Gửi tin nhắn"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
         </div>
@@ -530,46 +562,94 @@
 
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
-        <div class="nav-item"><i class="fas fa-home"></i><span class="nav-label">Trang chủ</span></div>
-        <div class="nav-item"><i class="fas fa-calendar"></i><span class="nav-label">Sự kiện</span></div>
-        <div class="nav-item"><i class="fas fa-plus"></i><span class="nav-label">Tạo</span></div>
-        <div class="nav-item active"><i class="fas fa-comments"></i><span class="nav-label">Trò chuyện</span></div>
-        <div class="nav-item"><i class="fas fa-users"></i><span class="nav-label">Xã hội</span></div>
+        <div class="nav-item" onclick="navClick(this)"><i class="fas fa-home"></i><span class="nav-label">Trang chủ</span></div>
+        <div class="nav-item" onclick="navClick(this)"><i class="fas fa-calendar"></i><span class="nav-label">Sự kiện</span></div>
+        <div class="nav-item" onclick="navClick(this)"><i class="fas fa-plus"></i><span class="nav-label">Tạo</span></div>
+        <div class="nav-item active" onclick="navClick(this)"><i class="fas fa-comments"></i><span class="nav-label">Trò chuyện</span></div>
+        <div class="nav-item" onclick="navClick(this)"><i class="fas fa-users"></i><span class="nav-label">Xã hội</span></div>
     </div>
 
     <script>
-        const textarea = document.querySelector('.input-field');
+        const textarea = document.getElementById('messageInput');
+        
         textarea.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
 
-        document.querySelector('.send-btn').addEventListener('click', function() {
+        function sendMessage() {
             if (textarea.value.trim()) {
+                const message = textarea.value;
+                const chatMessages = document.getElementById('chatMessages');
+                
+                const newMessage = document.createElement('div');
+                newMessage.className = 'message';
+                newMessage.innerHTML = `
+                    <div class="message-avatar">Y</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-name">Bạn</span>
+                            <span class="message-badge">🏠 Riêng tư</span>
+                        </div>
+                        <div class="message-text">${message}</div>
+                        <div class="message-reactions">
+                            <button class="reaction-btn" onclick="addReaction(this)">😊</button>
+                        </div>
+                        <div class="message-info">Vừa xong</div>
+                    </div>
+                `;
+                
+                chatMessages.appendChild(newMessage);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
                 textarea.value = '';
                 textarea.style.height = 'auto';
             }
-        });
+        }
 
-        document.querySelectorAll('.reaction-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                this.style.background = '#2a2a2a';
-                this.style.color = '#ff6b35';
-            });
-        });
+        function addReaction(btn) {
+            btn.style.background = '#ff6b35';
+            btn.style.color = 'white';
+            btn.style.borderColor = '#ff6b35';
+        }
 
-        document.querySelectorAll('.tab').forEach((tab, index) => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        }
 
-        document.querySelectorAll('.conversation-item').forEach(item => {
-            item.addEventListener('click', function() {
-                document.querySelectorAll('.conversation-item').forEach(i => i.style.background = 'none');
-                this.style.background = '#1a1a1a';
-            });
+        function selectConversation(item, name) {
+            document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            document.getElementById('chatTitle').textContent = name;
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="message">
+                    <div class="message-avatar">${name.charAt(0)}</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-name">${name}</span>
+                            <span class="message-badge">🏠 Riêng tư</span>
+                        </div>
+                        <div class="message-text">Xin chào! Bạn khỏe không?</div>
+                        <div class="message-reactions">
+                            <button class="reaction-btn" onclick="addReaction(this)">👋</button>
+                        </div>
+                        <div class="message-info">Hôm qua</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function navClick(item) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+        }
+
+        // Enter để gửi tin nhắn (Shift+Enter để xuống dòng)
+        textarea.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
         });
     </script>
 </body>

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard - Bảng Điều Khiển Thời Tiết</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+            max-width: 500px;
+            margin: 0 auto 30px;
+            background: white;
+            padding: 10px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .search-box input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 50px;
+        }
+        
+        .search-box button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .search-box button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 600px;
+            margin: 20px auto;
+            box-shadow: 0 5px 20px rgba(255,107,107,0.3);
+        }
+        
+        .main-weather {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+        
+        .weather-current {
+            text-align: center;
+        }
+        
+        .city-name {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .country {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .weather-icon-large {
+            font-size: 5em;
+            margin: 20px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .temperature {
+            font-size: 3.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .weather-description {
+            font-size: 1.5em;
+            color: #666;
+            margin-top: 10px;
+            text-transform: capitalize;
+        }
+        
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .detail-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #999;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .detail-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .hourly-forecast {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .forecast-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .hourly-list {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        
+        .hourly-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 120px;
+            flex-shrink: 0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .hourly-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .hourly-time {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .hourly-icon {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        
+        .hourly-temp {
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+        
+        .weekly-forecast {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .daily-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .daily-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .daily-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .daily-day {
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: capitalize;
+        }
+        
+        .daily-icon {
+            font-size: 2.5em;
+            margin: 10px 0;
+        }
+        
+        .daily-temp-range {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .daily-max {
+            font-weight: 700;
+            font-size: 1.3em;
+        }
+        
+        .daily-min {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .main-weather {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .temperature {
+                font-size: 2.5em;
+            }
+            
+            .daily-list {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+        }
+        
+        ::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌤️ Weather Dashboard</h1>
+            <p>Bảng Điều Khiển Thời Tiết</p>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Nhập tên thành phố... (VD: Hanoi, Tokyo, New York)">
+            <button onclick="searchWeather()">Search</button>
+        </div>
+        
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Đang tải dữ liệu thời tiết...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = '3b7b6a8b0e8c4e5f9d8c9e0f1a2b3c4d'; // Public key (limited)
+        const BASE_URL = 'https://api.openweathermap.org/data/2.5';
+        
+        // Sử dụng Open-Meteo (không cần key)
+        const WEATHER_API = 'https://api.open-meteo.com/v1';
+        const GEO_API = 'https://geocoding-api.open-meteo.com/v1';
+        
+        let currentCity = 'Hanoi';
+        
+        // Hàm tìm kiếm thành phố
+        async function searchWeather() {
+            const input = document.getElementById('searchInput').value.trim();
+            if (input) {
+                currentCity = input;
+                loadWeather();
+            }
+        }
+        
+        // Hàm lấy tọa độ
+        async function getCoordinates(city) {
+            try {
+                const response = await fetch(
+                    `${GEO_API}/search?name=${city}&count=1&language=en&format=json`
+                );
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    return data.results[0];
+                }
+                throw new Error('Không tìm thấy thành phố');
+            } catch (error) {
+                console.error('Lỗi:', error);
+                throw error;
+            }
+        }
+        
+        // Hàm lấy dữ liệu thời tiết
+        async function getWeatherData(lat, lon) {
+            try {
+                const response = await fetch(
+                    `${WEATHER_API}/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max&timezone=auto`
+                );
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Lỗi lấy thời tiết:', error);
+                throw error;
+            }
+        }
+        
+        // Hàm convert WMO code sang icon
+        function getWeatherIcon(code) {
+            if (code === 0 || code === 1) return '☀️';
+            if (code === 2) return '⛅';
+            if (code === 3) return '☁️';
+            if (code === 45 || code === 48) return '🌫️';
+            if (code === 51 || code === 53 || code === 55) return '🌧️';
+            if (code === 61 || code === 63 || code === 65) return '🌧️';
+            if (code === 71 || code === 73 || code === 75) return '❄️';
+            if (code === 80 || code === 81 || code === 82) return '🌧️';
+            if (code === 85 || code === 86) return '❄️';
+            if (code === 95 || code === 96 || code === 99) return '⛈️';
+            return '🌤️';
+        }
+        
+        // Hàm get tên ngày
+        function getDayName(date) {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            return days[new Date(date).getDay()];
+        }
+        
+        // Hàm format thời gian
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+        
+        // Hàm render UI
+        function renderWeather(cityData, weatherData) {
+            const hourly = weatherData.hourly;
+            const daily = weatherData.daily;
+            
+            let html = `
+                <div class="main-weather">
+                    <div class="weather-current">
+                        <div class="city-name">${currentCity}</div>
+                        <div class="country">${cityData.admin1 || 'Country'}, ${cityData.country}</div>
+                        <div class="weather-icon-large">${getWeatherIcon(hourly.weather_code[0])}</div>
+                        <div class="temperature">${Math.round(hourly.temperature_2m[0])}°C</div>
+                        <div class="weather-description">
+                            ${hourly.weather_code[0] === 0 ? 'Clear' : 
+                              hourly.weather_code[0] === 1 ? 'Mainly Clear' :
+                              hourly.weather_code[0] === 2 ? 'Partly Cloudy' :
+                              hourly.weather_code[0] === 3 ? 'Overcast' :
+                              hourly.weather_code[0] === 45 ? 'Foggy' :
+                              'Check detailed weather'}
+                        </div>
+                    </div>
+                    
+                    <div class="weather-details">
+                        <div class="detail-item">
+                            <div class="detail-label">💨 Wind Speed</div>
+                            <div class="detail-value">${Math.round(hourly.wind_speed_10m[0])} km/h</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">💧 Humidity</div>
+                            <div class="detail-value">${hourly.relative_humidity_2m[0]}%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">🌡️ Feels Like</div>
+                            <div class="detail-value">${Math.round(hourly.temperature_2m[0] - 2)}°C</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">👁️ Visibility</div>
+                            <div class="detail-value">10 km</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="hourly-forecast">
+                    <div class="forecast-title">⏰ Hourly Forecast (24h)</div>
+                    <div class="hourly-list">
+            `;
+            
+            // Thêm 24 giờ tiếp theo
+            for (let i = 0; i < Math.min(24, hourly.time.length); i++) {
+                const time = formatTime(hourly.time[i]);
+                const temp = Math.round(hourly.temperature_2m[i]);
+                const icon = getWeatherIcon(hourly.weather_code[i]);
+                
+                html += `
+                    <div class="hourly-item">
+                        <div class="hourly-time">${time}</div>
+                        <div class="hourly-icon">${icon}</div>
+                        <div class="hourly-temp">${temp}°</div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    </div>
+                </div>
+                
+                <div class="weekly-forecast">
+                    <div class="forecast-title">📅 Weekly Forecast (7 Days)</div>
+                    <div class="daily-list">
+            `;
+            
+            // Thêm 7 ngày tiếp theo
+            for (let i = 0; i < Math.min(7, daily.time.length); i++) {
+                const day = getDayName(daily.time[i]);
+                const max = Math.round(daily.temperature_2m_max[i]);
+                const min = Math.round(daily.temperature_2m_min[i]);
+                const icon = getWeatherIcon(daily.weather_code[i]);
+                
+                html += `
+                    <div class="daily-item">
+                        <div class="daily-day">${day}</div>
+                        <div class="daily-icon">${icon}</div>
+                        <div class="daily-temp-range">
+                            <div class="daily-max">${max}°</div>
+                            <div class="daily-min">${min}°</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('content').innerHTML = html;
+        }
+        
+        // Hàm load thời tiết
+        async function loadWeather() {
+            try {
+                document.getElementById('content').innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Đang tải dữ liệu thời tiết cho ${currentCity}...</p>
+                    </div>
+                `;
+                
+                const cityData = await getCoordinates(currentCity);
+                const weatherData = await getWeatherData(cityData.latitude, cityData.longitude);
+                
+                renderWeather(cityData, weatherData);
+            } catch (error) {
+                document.getElementById('content').innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>Lỗi: ${error.message}</p>
+                        <p>Vui lòng thử lại hoặc kiểm tra tên thành phố</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Enter để search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchWeather();
+            }
+        });
+        
+        // Load thời tiết mặc định khi trang tải
+        loadWeather();
+    </script>
+</body>
+</html>

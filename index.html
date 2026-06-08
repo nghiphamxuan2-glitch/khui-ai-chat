@@ -573,6 +573,28 @@
         .nav-label {
             font-size: 10px;
         }
+        
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            background: #1a1a1a;
+            border-top: 1px solid #2a2a2a;
+            border-left: 1px solid #2a2a2a;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #888;
+            max-width: 300px;
+            border-radius: 12px 0 0 0;
+        }
+        
+        .status-ok {
+            color: #4caf50;
+        }
+        .status-error {
+            color: #ff6b35;
+        }
+        
         @media (max-width: 768px) {
             .sidebar {
                 display: none;
@@ -680,10 +702,10 @@
                         <div class="chat-title" id="chatTitle">Mang xã hội (Thử nghiệm)</div>
                     </div>
                     <select id="providerSelect" class="provider-select">
+                        <option value="mock">Mock (Test)</option>
                         <option value="openai">OpenAI</option>
                         <option value="openrouter">OpenRouter</option>
                         <option value="anthropic">Claude</option>
-                        <option value="mock">Mock</option>
                     </select>
                 </div>
 
@@ -787,6 +809,11 @@
         </div>
     </div>
 
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <span id="statusText">🟡 Kiểm tra kết nối...</span>
+    </div>
+
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
         <div class="nav-item" onclick="navClick(this, 'home')"><i class="fas fa-home"></i><span class="nav-label">Trang chủ</span></div>
@@ -797,6 +824,9 @@
     </div>
 
     <script>
+        const API_URL = window.location.origin;
+        const statusText = document.getElementById('statusText');
+
         const characterDatabase = [
             { name: 'Luna', desc: 'AI Assistant', category: 'AI' },
             { name: 'Alex', desc: 'Developer', category: 'Tech' },
@@ -813,6 +843,27 @@
         let isFromHome = false;
         let isLoading = false;
 
+        // Check server connection on load
+        window.addEventListener('load', checkServerStatus);
+
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(`${API_URL}/api/health`, { method: 'GET' });
+                if (response.ok) {
+                    statusText.textContent = '🟢 Kết nối server thành công';
+                    statusText.className = 'status-ok';
+                    console.log('✅ Server is running');
+                } else {
+                    statusText.textContent = '🟠 Server lỗi (Status: ' + response.status + ')';
+                    statusText.className = 'status-error';
+                }
+            } catch (error) {
+                statusText.textContent = '🔴 Không thể kết nối server - ' + error.message;
+                statusText.className = 'status-error';
+                console.error('Server connection failed:', error);
+            }
+        }
+
         const textarea = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
         
@@ -828,31 +879,38 @@
             const character = document.getElementById('chatTitle').textContent;
             const provider = document.getElementById('providerSelect').value;
 
-            // Hiển thị tin nhắn người dùng
-            appendMessageToUI('Bạn', txt, 'Y');
+            appendMessageToUI('You', txt, 'Y');
             textarea.value = '';
             textarea.style.height = 'auto';
 
             isLoading = true;
             sendBtn.disabled = true;
+            statusText.textContent = '💬 Đang gửi tin nhắn...';
 
             try {
-                const response = await fetch('/api/chat', {
+                const response = await fetch(`${API_URL}/api/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ provider, character, message: txt })
                 });
 
                 if (!response.ok) {
-                    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
-                    appendMessageToUI('System', `Lỗi: ${err.error}`, 'S');
+                    const err = await response.json().catch(() => ({ error: 'Unknown error', detail: 'Server returned status ' + response.status }));
+                    appendMessageToUI('System', `❌ ${err.error}: ${err.detail || ''}`, 'S');
+                    statusText.textContent = '🔴 Lỗi: ' + err.error;
+                    statusText.className = 'status-error';
                     return;
                 }
 
                 const data = await response.json();
-                appendMessageToUI(character, data.reply || '(Không có phản hồi)', character.charAt(0));
+                appendMessageToUI(character, data.reply || '(No response)', character.charAt(0));
+                statusText.textContent = '🟢 Kết nối server thành công';
+                statusText.className = 'status-ok';
             } catch (error) {
-                appendMessageToUI('System', `Lỗi: Không thể kết nối server - ${error.message}`, 'S');
+                console.error('Error:', error);
+                appendMessageToUI('System', `❌ ${error.message}`, 'S');
+                statusText.textContent = '🔴 ' + error.message;
+                statusText.className = 'status-error';
             } finally {
                 isLoading = false;
                 sendBtn.disabled = false;
@@ -973,10 +1031,6 @@
             });
 
             if (!existingItem) {
-                const dateSection = document.createElement('div');
-                dateSection.className = 'date-section';
-                dateSection.textContent = 'Today';
-
                 const newConversation = document.createElement('div');
                 newConversation.className = 'conversation-item active';
                 newConversation.innerHTML = `
@@ -991,9 +1045,6 @@
                 };
 
                 conversationList.insertBefore(newConversation, conversationList.firstChild);
-                if (conversationList.querySelector('.date-section') !== dateSection) {
-                    conversationList.insertBefore(dateSection, conversationList.firstChild);
-                }
             } else {
                 document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
                 existingItem.classList.add('active');
